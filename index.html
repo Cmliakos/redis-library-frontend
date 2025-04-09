@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book Library</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        #controls {
+            margin-bottom: 20px;
+        }
+
+        #search-bar {
+            margin-left: 10px;
+            padding: 6px;
+            width: 200px;
+            font-size: 14px;
+        }
+
+        .book-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .book {
+            width: 160px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .book:hover {
+            transform: scale(1.05);
+        }
+
+        .book img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .book-title {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .favorite-label {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        #book-details {
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        #details-box {
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            padding: 15px;
+            display: inline-block;
+            white-space: pre-wrap;
+            text-align: left;
+            max-width: 600px;
+            margin-top: 10px;
+        }
+
+        #favorites-toggle {
+            margin-left: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Book Library</h1>
+
+    <div id="controls">
+        <label for="sort-menu">Sort by:</label>
+        <select id="sort-menu" onchange="reloadBooks()">
+            <option value="title_asc">Title: A-Z</option>
+            <option value="title_desc">Title: Z-A</option>
+            <option value="price_low">Price: Low to High</option>
+            <option value="price_high">Price: High to Low</option>
+        </select>
+
+        <input type="text" id="search-bar" placeholder="Search books..." oninput="filterBooks()" />
+
+        <label id="favorites-toggle">
+            <input type="checkbox" id="only-favorites" onchange="filterBooks()" />
+            Show only favorites
+        </label>
+    </div>
+
+    <div id="book-grid" class="book-grid">
+        <!-- Books will appear here -->
+    </div>
+
+    <div id="book-details">
+        <h2>Book Details</h2>
+        <pre id="details-box">Click a book to view details.</pre>
+    </div>
+
+    <script>
+    let allBooks = [];
+
+    function reloadBooks() {
+        const sortValue = document.getElementById("sort-menu").value;
+        loadBooks(sortValue);
+    }
+
+    function loadBooks(sort = "title_asc") {
+        fetch(`http://localhost:8080/books?sort=${sort}`)
+            .then(res => res.json())
+            .then(books => {
+                allBooks = books;
+                filterBooks();
+            })
+            .catch(err => {
+                console.error("Error loading books:", err);
+            });
+    }
+
+    function renderBooks(bookList) {
+        const grid = document.getElementById("book-grid");
+        grid.innerHTML = "";
+
+        if (bookList.length === 0) {
+            grid.innerHTML = "<p>No books found.</p>";
+            return;
+        }
+
+        bookList.forEach(book => {
+            const card = document.createElement("div");
+            card.className = "book";
+
+            const imageUrl = book.imageUrl || "";
+            const title = book.title || "Untitled";
+            const id = book.id || "";
+            const isFavorite = book.isFavorite === "true";
+
+            card.innerHTML = `
+                <img src="${imageUrl}" alt="${title}" />
+                <p class="book-title">${title}</p>
+                <p class="favorite-label" onclick="toggleFavorite('${id}', this)">
+                    Favorite: ${isFavorite ? "Yes" : "No"}
+                </p>
+            `;
+
+            card.onclick = (e) => {
+                if (!e.target.classList.contains("favorite-label")) {
+                    getBookDetails(id);
+                }
+            };
+
+            grid.appendChild(card);
+        });
+    }
+
+    function toggleFavorite(bookId, label) {
+        const userId = "user1";
+        const isCurrentlyFavorite = label.innerText.includes("Yes");
+        const action = isCurrentlyFavorite ? "unfavorite" : "favorite";
+
+        fetch(`http://localhost:8080/${action}?userId=${userId}&bookId=${bookId}`, {
+            method: "POST"
+        }).then(() => {
+            label.innerText = `Favorite: ${isCurrentlyFavorite ? "No" : "Yes"}`;
+        }).catch(err => {
+            console.error("Error toggling favorite:", err);
+        });
+    }
+
+    function getBookDetails(bookName) {
+        fetch(`http://localhost:8080/bookDetails?bookName=${bookName}`)
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("details-box").innerText = data;
+            })
+            .catch(err => {
+                console.error("Error loading book details:", err);
+                document.getElementById("details-box").innerText = "Error loading book details.";
+            });
+    }
+
+    function filterBooks() {
+        const query = document.getElementById("search-bar").value.toLowerCase();
+        const showOnlyFavorites = document.getElementById("only-favorites").checked;
+
+        const filtered = allBooks.filter(book => {
+            const matchesSearch = book.title && book.title.toLowerCase().includes(query);
+            const matchesFav = !showOnlyFavorites || book.isFavorite === "true";
+            return matchesSearch && matchesFav;
+        });
+
+        renderBooks(filtered);
+    }
+
+    window.onload = () => loadBooks();
+</script>
+</body>
+</html>
