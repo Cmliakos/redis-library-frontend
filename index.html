@@ -129,7 +129,7 @@
     }
 
     function loadBooks(sort = "title_asc") {
-        fetch(`http://localhost:8080/books?sort=${sort}`)
+        fetch(`https://redis-library-backend.onrender.com/books?sort=${sort}`)
             .then(res => res.json())
             .then(books => {
                 allBooks = books;
@@ -181,17 +181,20 @@
         const isCurrentlyFavorite = label.innerText.includes("Yes");
         const action = isCurrentlyFavorite ? "unfavorite" : "favorite";
 
-        fetch(`http://localhost:8080/${action}?userId=${userId}&bookId=${bookId}`, {
-            method: "POST"
-        }).then(() => {
-            label.innerText = `Favorite: ${isCurrentlyFavorite ? "No" : "Yes"}`;
-        }).catch(err => {
-            console.error("Error toggling favorite:", err);
-        });
+        fetch(`https://redis-library-backend.onrender.com/${action}?userId=${userId}&bookId=${bookId}`, {
+    method: "POST"
+})
+.then(() => {
+    label.innerText = `Favorite: ${isCurrentlyFavorite ? "No" : "Yes"}`;
+})
+.catch(err => {
+    console.error("Error toggling favorite:", err);
+});
+
     }
 
     function getBookDetails(bookName) {
-        fetch(`http://localhost:8080/bookDetails?bookName=${bookName}`)
+        fetch(`https://redis-library-backend.onrender.com/bookDetails?bookName=${bookName}`)
             .then(res => res.text())
             .then(data => {
                 document.getElementById("details-box").innerText = data;
