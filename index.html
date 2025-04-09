@@ -121,104 +121,105 @@
     </div>
 
     <script>
-    let allBooks = [];
+let allBooks = [];
 
-    function reloadBooks() {
-        const sortValue = document.getElementById("sort-menu").value;
-        loadBooks(sortValue);
-    }
+function reloadBooks() {
+    const sortValue = document.getElementById("sort-menu").value;
+    loadBooks(sortValue);
+}
 
-    function loadBooks(sort = "title_asc") {
-        fetch(`https://redis-library-backend.onrender.com/books?sort=${sort}`)
-            .then(res => res.json())
-            .then(books => {
-                allBooks = books;
-                filterBooks();
-            })
-            .catch(err => {
-                console.error("Error loading books:", err);
-            });
-    }
-
-    function renderBooks(bookList) {
-        const grid = document.getElementById("book-grid");
-        grid.innerHTML = "";
-
-        if (bookList.length === 0) {
-            grid.innerHTML = "<p>No books found.</p>";
-            return;
-        }
-
-        bookList.forEach(book => {
-            const card = document.createElement("div");
-            card.className = "book";
-
-            const imageUrl = book.imageUrl || "";
-            const title = book.title || "Untitled";
-            const id = book.id || "";
-            const isFavorite = book.isFavorite === "true";
-
-            card.innerHTML = `
-                <img src="${imageUrl}" alt="${title}" />
-                <p class="book-title">${title}</p>
-                <p class="favorite-label" onclick="toggleFavorite('${id}', this)">
-                    Favorite: ${isFavorite ? "Yes" : "No"}
-                </p>
-            `;
-
-            card.onclick = (e) => {
-                if (!e.target.classList.contains("favorite-label")) {
-                    getBookDetails(id);
-                }
-            };
-
-            grid.appendChild(card);
+function loadBooks(sort = "title_asc") {
+    fetch(`https://redis-library-backend.onrender.com/books?sort=${sort}`)
+        .then(res => res.json())
+        .then(books => {
+            console.log("Books from backend:", books); // ✅ Debug
+            allBooks = books;
+            filterBooks();
+        })
+        .catch(err => {
+            console.error("Error loading books:", err);
         });
+}
+
+function renderBooks(bookList) {
+    const grid = document.getElementById("book-grid");
+    grid.innerHTML = "";
+
+    if (bookList.length === 0) {
+        grid.innerHTML = "<p>No books found.</p>";
+        return;
     }
 
-    function toggleFavorite(bookId, label) {
-        const userId = "user1";
-        const isCurrentlyFavorite = label.innerText.includes("Yes");
-        const action = isCurrentlyFavorite ? "unfavorite" : "favorite";
+    bookList.forEach(book => {
+        const card = document.createElement("div");
+        card.className = "book";
 
-        fetch(`https://redis-library-backend.onrender.com/${action}?userId=${userId}&bookId=${bookId}`, {
-    method: "POST"
-})
-.then(() => {
-    label.innerText = `Favorite: ${isCurrentlyFavorite ? "No" : "Yes"}`;
-})
-.catch(err => {
-    console.error("Error toggling favorite:", err);
-});
+        const imageUrl = book.imageUrl || "";
+        const title = book.title || "Untitled";
+        const id = book.id || "";
+        const isFavorite = book.isFavorite === "true";
 
-    }
+        card.innerHTML = `
+            <img src="${imageUrl}" alt="${title}" />
+            <p class="book-title">${title}</p>
+            <p class="favorite-label" onclick="toggleFavorite('${id}', this)">
+                Favorite: ${isFavorite ? "Yes" : "No"}
+            </p>
+        `;
 
-    function getBookDetails(bookName) {
-        fetch(`https://redis-library-backend.onrender.com/bookDetails?bookName=${bookName}`)
-            .then(res => res.text())
-            .then(data => {
-                document.getElementById("details-box").innerText = data;
-            })
-            .catch(err => {
-                console.error("Error loading book details:", err);
-                document.getElementById("details-box").innerText = "Error loading book details.";
-            });
-    }
+        card.onclick = (e) => {
+            if (!e.target.classList.contains("favorite-label")) {
+                getBookDetails(id);
+            }
+        };
 
-    function filterBooks() {
-        const query = document.getElementById("search-bar").value.toLowerCase();
-        const showOnlyFavorites = document.getElementById("only-favorites").checked;
+        grid.appendChild(card);
+    });
+}
 
-        const filtered = allBooks.filter(book => {
-            const matchesSearch = book.title && book.title.toLowerCase().includes(query);
-            const matchesFav = !showOnlyFavorites || book.isFavorite === "true";
-            return matchesSearch && matchesFav;
+function toggleFavorite(bookId, label) {
+    const userId = "user1";
+    const isCurrentlyFavorite = label.innerText.includes("Yes");
+    const action = isCurrentlyFavorite ? "unfavorite" : "favorite";
+
+    fetch(`https://redis-library-backend.onrender.com/${action}?userId=${userId}&bookId=${bookId}`, {
+        method: "POST"
+    })
+    .then(() => {
+        label.innerText = `Favorite: ${isCurrentlyFavorite ? "No" : "Yes"}`;
+    })
+    .catch(err => {
+        console.error("Error toggling favorite:", err);
+    });
+}
+
+function getBookDetails(bookName) {
+    fetch(`https://redis-library-backend.onrender.com/bookDetails?bookName=${bookName}`)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("details-box").innerText = data;
+        })
+        .catch(err => {
+            console.error("Error loading book details:", err);
+            document.getElementById("details-box").innerText = "Error loading book details.";
         });
+}
 
-        renderBooks(filtered);
-    }
+function filterBooks() {
+    const query = document.getElementById("search-bar").value.toLowerCase();
+    const showOnlyFavorites = document.getElementById("only-favorites").checked;
 
-    window.onload = () => loadBooks();
+    const filtered = allBooks.filter(book => {
+        const matchesSearch = book.title && book.title.toLowerCase().includes(query);
+        const matchesFav = !showOnlyFavorites || book.isFavorite === "true";
+        return matchesSearch && matchesFav;
+    });
+
+    renderBooks(filtered);
+}
+
+window.onload = () => loadBooks();
 </script>
+
 </body>
 </html>
