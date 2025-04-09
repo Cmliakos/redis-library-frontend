@@ -186,7 +186,8 @@ function toggleFavorite(bookId, label) {
         method: "POST"
     })
     .then(() => {
-        label.innerText = `Favorite: ${isCurrentlyFavorite ? "No" : "Yes"}`;
+        // ✅ Refresh full list so isFavorite is correct in allBooks
+        reloadBooks();
     })
     .catch(err => {
         console.error("Error toggling favorite:", err);
